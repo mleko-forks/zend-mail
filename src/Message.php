@@ -551,10 +551,13 @@ class Message
         $message = new static();
         $headers = null;
         $content = null;
+        /** @var Headers $headers */
         Mime\Decode::splitMessage($rawMessage, $headers, $content);
         if ($headers->has('mime-version')) {
             // todo - restore body to mime\message
         }
+        $message->setEncoding($headers->getEncoding());
+        
         $message->setHeaders($headers);
         $message->setBody($content);
         return $message;
