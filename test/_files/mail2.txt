@@ -1,0 +1,6 @@
+Sender: foo@bar.info
+From: foo@bar.info
+Subject: subject
+To: =?UTF-8?Q?ZF=20DevTeam?= <zf@dev.com>, test@foo.com
+
+Content

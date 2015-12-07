@@ -30,9 +30,18 @@ class GenericHeader implements HeaderInterface, UnstructuredInterface
      */
     protected $encoding;
 
+    /**
+     * @var HeaderLoader|null
+     */
+    private static $headerLoader = null;
+
     public static function fromString($headerLine)
     {
         list($name, $value) = self::splitHeaderLine($headerLine);
+        if($class = self::getHeaderLoader()->getClassName($name)){
+            return $class::fromString($headerLine);
+        }
+
         $decodedValue  = HeaderWrap::mimeDecodeValue($value);
         $header = new static($name, $decodedValue);
         $header->setEncoding(Mime::mimeDetectCharset($value));
@@ -172,5 +181,16 @@ class GenericHeader implements HeaderInterface, UnstructuredInterface
         $value = $this->getFieldValue(HeaderInterface::FORMAT_ENCODED);
 
         return $name . ': ' . $value;
+    }
+
+    /**
+     * @return HeaderLoader
+     */
+    private static function getHeaderLoader()
+    {
+        if(null === self::$headerLoader){
+            self::$headerLoader = new HeaderLoader();
+        }
+        return self::$headerLoader;
     }
 }

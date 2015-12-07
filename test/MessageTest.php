@@ -27,9 +27,12 @@ class MessageTest extends \PHPUnit_Framework_TestCase
     /** @var Message */
     public $message;
 
+    protected $_file2;
+
     public function setUp()
     {
         $this->message = new Message();
+        $this->_file2 = __DIR__ . '/_files/mail2.txt';
     }
 
     public function testInvalidByDefault()
@@ -789,5 +792,15 @@ class MessageTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Zend\Mail\Header\ContentType', $contentType);
         $this->assertContains('multipart/alternative', $contentType->getFieldValue());
         $this->assertContains($multipartContent->getMime()->boundary(), $contentType->getFieldValue());
+    }
+
+    public function testFileParsing()
+    {
+        $message = Message::fromString(file_get_contents($this->_file2));
+
+        $this->assertEquals('subject', $message->getSubject());
+        $this->assertTrue($message->getTo()->has('zf@dev.com'));
+        $this->assertTrue($message->getTo()->has('test@foo.com'));
+        $this->assertEquals('ZF DevTeam', $message->getTo()->get('zf@dev.com')->getName());
     }
 }
