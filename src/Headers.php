@@ -250,6 +250,9 @@ class Headers implements Countable, Iterator
     {
         $key = $this->normalizeFieldName($header->getFieldName());
         $this->headersKeys[] = $key;
+        if ($header->getEncoding() !== 'ASCII') {
+            $this->setEncoding($header->getEncoding());
+        }
         $this->headers[] = $header;
         if ($this->getEncoding() !== 'ASCII') {
             $header->setEncoding($this->getEncoding());

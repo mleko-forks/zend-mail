@@ -552,9 +552,11 @@ class Message
         $headers = null;
         $content = null;
         Mime\Decode::splitMessage($rawMessage, $headers, $content, Headers::EOL);
+        /** @var Headers $headers */
         if ($headers->has('mime-version')) {
             // todo - restore body to mime\message
         }
+        $message->setEncoding($headers->getEncoding());
         $message->setHeaders($headers);
         $message->setBody($content);
         return $message;

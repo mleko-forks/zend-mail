@@ -33,8 +33,9 @@ class GenericHeader implements HeaderInterface, UnstructuredInterface
     public static function fromString($headerLine)
     {
         list($name, $value) = self::splitHeaderLine($headerLine);
-        $value  = HeaderWrap::mimeDecodeValue($value);
-        $header = new static($name, $value);
+        $decodedValue  = HeaderWrap::mimeDecodeValue($value);
+        $header = new static($name, $decodedValue);
+        $header->setEncoding(Mime::mimeDetectCharset($value));
 
         return $header;
     }
