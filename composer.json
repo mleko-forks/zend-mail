@@ -1,5 +1,5 @@
 {
-    "name": "zendframework/zend-mail",
+    "name": "mleko/zend-mail",
     "description": "provides generalized functionality to compose and send both text and MIME-compliant multipart e-mail messages",
     "license": "BSD-3-Clause",
     "keywords": [
@@ -31,6 +31,9 @@
         "ext-intl": "Handle IDN in AddressList hostnames",
         "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3 when using SMTP to deliver messages",
         "zendframework/zend-crypt": "Crammd5 support in SMTP Auth"
+    },
+    "replace":{
+        "zendframework/zend-mail": "self.version"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
