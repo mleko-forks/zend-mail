@@ -472,9 +472,6 @@ class HeadersTest extends TestCase
         $headers->forceLoading();
     }
 
-    /**
-     * @requires extension intl
-     */
     public function testAddressListGetEncodedFieldValueWithUtf8Domain()
     {
         $to = new Header\To;
