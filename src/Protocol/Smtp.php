@@ -270,6 +270,7 @@ class Smtp extends AbstractProtocol
      *
      * @param  string $from Sender mailbox
      * @param string|null $envelopeId
+     * @throws Exception\RuntimeException;
      */
     public function mail($from, $envelopeId = null)
     {
@@ -498,7 +499,7 @@ class Smtp extends AbstractProtocol
         if (isset($this->config["extension"], $this->config["extension"]["dsn"])) {
             if (!$this->isExtensionSupported("DSN")) {
                 $dsnConfig = $this->config["extension"]["dsn"];
-                if (isset($dsnConfig["onUnsupported"]) && $dsnConfig["on_unsupported"] !== "ignore") {
+                if (isset($dsnConfig["on_unsupported"]) && $dsnConfig["on_unsupported"] !== "ignore") {
                     throw new Exception\RuntimeException("DSN is not supported by server");
                 } else {
                     return false;
