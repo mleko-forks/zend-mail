@@ -74,6 +74,16 @@ class Smtp extends AbstractProtocol
     protected $useCompleteQuit = true;
 
     /**
+     * @var array
+     */
+    private $config = [];
+
+    /**
+     * @var string[]
+     */
+    private $extensions = [];
+
+    /**
      * Constructor.
      *
      * The first argument may be an array of all options. If so, it must include
@@ -150,6 +160,8 @@ class Smtp extends AbstractProtocol
                 $port = 25;
             }
         }
+
+        $this->config = $config;
 
         parent::__construct($host, $port);
     }
@@ -244,6 +256,8 @@ class Smtp extends AbstractProtocol
         try {
             $this->_send('EHLO ' . $host);
             $this->_expect(250, 300); // Timeout set for 5 minutes as per RFC 2821 4.5.3.2
+            $response = $this->getResponse();
+            $this->parseSupportedExtensions($response);
         } catch (Exception\ExceptionInterface $e) {
             $this->_send('HELO ' . $host);
             $this->_expect(250, 300); // Timeout set for 5 minutes as per RFC 2821 4.5.3.2
@@ -255,15 +269,20 @@ class Smtp extends AbstractProtocol
      * Issues MAIL command
      *
      * @param  string $from Sender mailbox
-     * @throws Exception\RuntimeException
+     * @param string|null $envelopeId
+     * @throws Exception\RuntimeException;
      */
-    public function mail($from)
+    public function mail($from, $envelopeId = null)
     {
         if ($this->sess !== true) {
             throw new Exception\RuntimeException('A valid session has not been started');
         }
 
-        $this->_send('MAIL FROM:<' . $from . '>');
+        $request = 'MAIL FROM:<' . $from . '>';
+        if ($this->isDsnEnabled() && null !== $envelopeId) {
+            $request .= ' ENVID=' . $envelopeId;
+        }
+        $this->_send($request);
         $this->_expect(250, 300); // Timeout set for 5 minutes as per RFC 2821 4.5.3.2
 
         // Set mail to true, clear recipients and any existing data flags as per 4.1.1.2 of RFC 2821
@@ -286,7 +305,17 @@ class Smtp extends AbstractProtocol
         }
 
         // Set rcpt to true, as per 4.1.1.3 of RFC 2821
-        $this->_send('RCPT TO:<' . $to . '>');
+        $request = 'RCPT TO:<' . $to . '>';
+        if ($this->isDsnEnabled()) {
+            $validValues = ["NEVER", "SUCCESS", "FAILURE", "DELAY"];
+            foreach ($this->config["extension"]["dsn"]["notify"] as $line) {
+                if (!in_array(\strtoupper($line), $validValues)) {
+                    throw new Exception\RuntimeException('Invalid DSN condition');
+                }
+            }
+            $request .= ' NOTIFY=' . \strtoupper(\implode(",", $this->config["extension"]["dsn"]["notify"])) . ' ORCPT=rfc822;' . $to;
+        }
+        $this->_send($request);
         $this->_expect([250, 251], 300); // Timeout set for 5 minutes as per RFC 2821 4.5.3.2
         $this->rcpt = true;
     }
@@ -446,5 +475,38 @@ class Smtp extends AbstractProtocol
     protected function stopSession()
     {
         $this->sess = false;
+    }
+
+    private function parseSupportedExtensions($response)
+    {
+        \array_shift($response);
+        $extensions = [];
+        foreach ($response as $line) {
+            if (\preg_match("!^250(-| ).+!", $line)) {
+                $extensions[] = \trim(\substr($line, 4));
+            }
+        }
+        $this->extensions = $extensions;
+    }
+
+    private function isExtensionSupported($extension)
+    {
+        return \in_array($extension, $this->extensions);
+    }
+
+    private function isDsnEnabled()
+    {
+        if (isset($this->config["extension"], $this->config["extension"]["dsn"])) {
+            if (!$this->isExtensionSupported("DSN")) {
+                $dsnConfig = $this->config["extension"]["dsn"];
+                if (isset($dsnConfig["on_unsupported"]) && $dsnConfig["on_unsupported"] !== "ignore") {
+                    throw new Exception\RuntimeException("DSN is not supported by server");
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
